@@ -19,6 +19,9 @@ dist-ssr
 
 # Config de la sesion de Claude Code (local, no del proyecto)
 .claude/
+
+# Modelos 3D: de momento fuera del repo, se añadiran mas adelante
+public/models/
 .DS_Store
 *.suo
 *.ntvs*
