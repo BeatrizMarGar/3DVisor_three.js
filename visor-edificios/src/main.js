@@ -1,6 +1,7 @@
 import './style.css'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x1e1e24)
@@ -30,11 +31,46 @@ controls.target.set(0,0,0)
 
 scene.add(new THREE.GridHelper(20,20, 0x555555, 0x333333)) //para ayudar a la localización al mover el ratón
 
-const geometry = new THREE.BoxGeometry(1, 1, 1)
-const material = new THREE.MeshStandardMaterial({color: 0x4f9dff})
-const cube = new THREE.Mesh(geometry, material)
-cube.position.y = 0.5
-scene.add(cube)
+const loader = new GLTFLoader()
+
+loader.load(
+  '/models/low_poly_building.glb',
+  (gltf) => {
+    const building = gltf.scene
+    scene.add(building)
+    frameModel(building)
+  },
+  (progress) => {
+    if (progress.total){
+      console.log(`Cargando: ${Math.round((progress.loaded / progress.total) * 100)}%`)
+    }
+  },
+  (error) => {
+    console.error('Error cargando el modelo:', error)
+  }
+)
+
+function frameModel(object){
+  const box = new THREE.Box3().setFromObject(object)
+  const size = box.getSize(new THREE.Vector3())
+  const center = box.getCenter(new THREE.Vector3())
+
+  object.position.x -= center.x
+  object.position.y -= box.min.y
+  object.position.z -= center.z
+
+  const maxDim = Math.max(size.x, size.y, size.z)
+  const distance = maxDim * 1.8
+  camera.position.set(distance, distance * 0.7, distance)
+  camera.near = maxDim / 100
+  camera.far = maxDim * 20
+  camera.updateProjectionMatrix()
+
+  controls.target.set(0, size.y / 2, 0)
+  controls.minDistance = maxDim * 0.3
+  controls.maxDistance = maxDim * 5
+  controls.update()
+}
 
 scene.add(new THREE.AmbientLight(0xffffff, 0.5))
 const sun = new THREE.DirectionalLight(0xffffff, 2)
