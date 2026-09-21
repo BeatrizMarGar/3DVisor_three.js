@@ -1,5 +1,6 @@
 import './style.css'
 import * as THREE from 'three'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x1e1e24)
@@ -19,9 +20,20 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 document.body.appendChild(renderer.domElement)
 
+const controls = new OrbitControls(camera, renderer.domElement)
+controls.enableDamping = true
+controls.dampingFactor = 0.05
+controls.minDistance = 1.5
+controls.maxDistance = 20
+controls.maxPolarAngle = Math.PI / 2 //fórmula para no pasar debajo del suelo
+controls.target.set(0,0,0)
+
+scene.add(new THREE.GridHelper(20,20, 0x555555, 0x333333)) //para ayudar a la localización al mover el ratón
+
 const geometry = new THREE.BoxGeometry(1, 1, 1)
 const material = new THREE.MeshStandardMaterial({color: 0x4f9dff})
 const cube = new THREE.Mesh(geometry, material)
+cube.position.y = 0.5
 scene.add(cube)
 
 scene.add(new THREE.AmbientLight(0xffffff, 0.5))
@@ -36,6 +48,6 @@ window.addEventListener('resize', () => {
 })
 
 renderer.setAnimationLoop(() =>{
-  cube.rotation.y +=0.01;
+  controls.update()
   renderer.render(scene, camera)
 })
