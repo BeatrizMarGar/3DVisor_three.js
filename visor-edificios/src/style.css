@@ -6,3 +6,44 @@ html, body {
 canvas {
   display: block;
 }
+
+#legend {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  padding: 12px 14px;
+  background: rgba(20, 20, 26, 0.75);
+  color: #e6e6ea;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.7;
+  border-radius: 8px;
+  pointer-events: none;
+  user-select: none;
+}
+#legend h2 {
+  margin: 8px 0 2px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9aa0ad;
+}
+#legend h2:first-child {
+  margin-top: 0;
+}
+#legend ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+#legend kbd {
+  display: inline-block;
+  min-width: 3.2em;
+  margin-right: 8px;
+  padding: 0 6px;
+  text-align: center;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
