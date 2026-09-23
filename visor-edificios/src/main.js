@@ -83,28 +83,13 @@ const sun = new THREE.DirectionalLight(0xffffff, 2)
 sun.position.set(5, 5, 5)
 scene.add(sun)
 
-// Creación de caja
 const zoneGeometry = new THREE.BoxGeometry(1, 1, 1)
+const zoneEdgesGeometry = new THREE.EdgesGeometry(zoneGeometry)
+const zoneEdgesMaterial = new THREE.LineBasicMaterial({ color: 0x33aaff })
 
-const zone = new THREE.Mesh(
-  zoneGeometry,
-  new THREE.MeshBasicMaterial({
-    color: 0x33aaff,
-    transparent: true,
-    opacity: 0.25,
-    depthWrite: false
-  })
-)
-
-zone.add(
-  new THREE.LineSegments(
-    new THREE.EdgesGeometry(zoneGeometry),
-    new THREE.LineBasicMaterial({ color: 0x33aaff })
-  )
-)
-
-zone.visible = false
-scene.add(zone)
+const zones = []
+let selectedZone = null
+let creatingZone = false
 
 const transformControls = new TransformControls(camera, renderer.domElement)
 scene.add(transformControls.getHelper())
@@ -113,40 +98,87 @@ transformControls.addEventListener('dragging-changed', (event) => {
   controls.enabled = !event.value
 })
 
-function placeZone(point){
+function createZone(point){
+  const mesh = new THREE.Mesh(
+    zoneGeometry,
+    new THREE.MeshBasicMaterial({
+      color: 0x33aaff,
+      transparent: true,
+      opacity: 0.15,
+      depthWrite: false
+    })
+  )
+  mesh.add(new THREE.LineSegments(zoneEdgesGeometry, zoneEdgesMaterial))
+
   const s = modelSize * 0.25
-  zone.scale.set(s, s, s)
-  zone.position.copy(point)
-  zone.visible = true
-  transformControls.attach(zone)
+  mesh.scale.set(s, s, s)
+  mesh.position.copy(point)
+
+  scene.add(mesh)
+  zones.push(mesh)
+  return mesh
+}
+
+function selectZone(zone){
+  if (selectedZone) selectedZone.material.opacity = 0.15
+  selectedZone = zone
+
+  if (zone) {
+    zone.material.opacity = 0.4
+    transformControls.attach(zone)
+  } else {
+    transformControls.detach()
+  }
+}
+
+function deleteSelectedZone(){
+  if (!selectedZone) return
+  const zone = selectedZone
+  selectZone(null)
+  scene.remove(zone)
+  zones.splice(zones.indexOf(zone), 1)
+  zone.material.dispose()
+}
+
+function setCreatingZone(value){
+  creatingZone = value
+  renderer.domElement.style.cursor = value ? 'crosshair' : 'auto'
 }
 
 window.addEventListener('keydown', (event) => {
   const key = event.key.toLowerCase()
+  if (key === 'n') setCreatingZone(true)
   if (key === 'g') transformControls.setMode('translate')
   if (key === 's') transformControls.setMode('scale')
+  if (key === 'delete') deleteSelectedZone()
   if (key === 'escape') {
-    transformControls.detach()
-    zone.visible = false
+    setCreatingZone(false)
+    selectZone(null)
   }
 })
 
 const raycaster = new THREE.Raycaster()
 const pointer = new THREE.Vector2()
 
-function onModelClick(event){
-  if (!building) return
-
+function onSceneClick(event){
   const rect = renderer.domElement.getBoundingClientRect()
   pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
   pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
 
   raycaster.setFromCamera(pointer, camera)
-  const hits = raycaster.intersectObject(building, true)
 
-  if (hits.length > 0) {
-    placeZone(hits[0].point)
+  if (creatingZone) {
+    if (!building) return
+    const buildingHits = raycaster.intersectObject(building, true)
+    if (buildingHits.length > 0) {
+      selectZone(createZone(buildingHits[0].point))
+      setCreatingZone(false)
+    }
+    return
   }
+
+  const zoneHits = raycaster.intersectObjects(zones, false)
+  selectZone(zoneHits.length > 0 ? zoneHits[0].object : null)
 }
 
 let downX = 0
@@ -162,7 +194,7 @@ renderer.domElement.addEventListener('pointerup', (event) => {
   if (transformControls.axis) return
   const moved = Math.hypot(event.clientX - downX, event.clientY - downY)
   if (moved > 5) return
-  onModelClick(event)
+  onSceneClick(event)
 })
 
 window.addEventListener('resize', () => {
