@@ -47,3 +47,49 @@ canvas {
   background: rgba(255, 255, 255, 0.12);
   border-radius: 4px;
 }
+#comment-panel {
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  width: 260px;
+  padding: 12px 14px;
+  background: rgba(20, 20, 26, 0.85);
+  color: #e6e6ea;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  border-radius: 8px;
+  display: none;
+}
+#comment-panel.visible {
+  display: block;
+}
+#comment-panel h2 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9aa0ad;
+}
+#comment-text {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: inherit;
+  font: inherit;
+  padding: 6px 8px;
+  box-sizing: border-box;
+}
+.zone-comment-bubble {
+  padding: 3px 7px;
+  background: rgba(20, 20, 26, 0.85);
+  color: #e6e6ea;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+}

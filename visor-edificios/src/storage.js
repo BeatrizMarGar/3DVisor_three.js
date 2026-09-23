@@ -5,7 +5,8 @@ const STORAGE_KEY = "visor-edificios:zones"
 export function saveZones(zones){
     const data = zones.map((zone) => ({
         position: {x: zone.position.x, y: zone.position.y, z: zone.position.z},
-        scale: {x: zone.scale.x, y: zone.scale.y, z: zone.scale.z}
+        scale: {x: zone.scale.x, y: zone.scale.y, z: zone.scale.z},
+        comment: zone.userData.comment
     }))
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
 }

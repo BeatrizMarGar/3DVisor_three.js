@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { TransformControls } from 'three/addons/controls/TransformControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import {saveZones, loadZones} from './storage.js'
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js' //render2D para texto
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x1e1e24)
@@ -22,6 +23,14 @@ const renderer = new THREE.WebGLRenderer({antialias: true})
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 document.body.appendChild(renderer.domElement)
+
+const labelRenderer = new CSS2DRenderer()
+labelRenderer.setSize (window.innerWidth, window.innerHeight)
+labelRenderer.domElement.style.position = "absolute"
+labelRenderer.domElement.style.top = "0px"
+labelRenderer.domElement.style.left = "0px"
+labelRenderer.domElement.style.pointerEvents = "none"
+document.body.appendChild(labelRenderer.domElement)
 
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.enableDamping = true
@@ -91,6 +100,16 @@ const zoneEdgesMaterial = new THREE.LineBasicMaterial({ color: 0x33aaff })
 const zones = []
 let selectedZone = null
 let creatingZone = false
+let commentsVisible = false
+const commentPanel = document.getElementById('comment-panel')
+const commentText = document.getElementById('comment-text')
+
+commentText.addEventListener('input', () => {
+  if (!selectedZone) return
+  selectedZone.userData.comment = commentText.value
+  updateZoneLabel(selectedZone)
+  saveZones(zones)
+})
 
 const transformControls = new TransformControls(camera, renderer.domElement)
 scene.add(transformControls.getHelper())
@@ -100,7 +119,7 @@ transformControls.addEventListener('dragging-changed', (event) => {
   if (!event.value) saveZones(zones) //solo guardo posición al soltar el gizmo
 })
 
-function addZone(position, scale){
+function addZone(position, scale, comment = ""){
   const mesh = new THREE.Mesh(
     zoneGeometry,
     new THREE.MeshBasicMaterial({
@@ -115,10 +134,32 @@ function addZone(position, scale){
   mesh.position.set(position.x, position.y, position.z)
   mesh.scale.set(scale.x, scale.y, scale.z)
 
+  const labelElement = document.createElement("div")
+  labelElement.className = "zone-comment-bubble"
+  const label = new CSS2DObject(labelElement)
+  label.position.set(0, 0.5, 0)
+  mesh.add(label)
+
+  mesh.userData.comment = comment
+  mesh.userData.label = label
+  mesh.userData.labelElement = labelElement
+  updateZoneLabel(mesh)
+
   scene.add(mesh)
   zones.push(mesh)
   return mesh
 }
+
+function updateZoneLabel(zone){
+  zone.userData.labelElement.textContent = zone.userData.comment
+  zone.userData.label.visible = commentsVisible && zone.userData.comment.trim() !== ""
+}
+
+function setCommentsVisible(value){
+  commentsVisible = value
+  for (const zone of zones) updateZonelabel(zone)
+}
+
 
 function createZone(point){
   const s = modelSize * 0.25
@@ -126,7 +167,7 @@ function createZone(point){
 }
 
 for (const saved of loadZones()) {
-  addZone(saved.position, saved.scale)
+  addZone(saved.position, saved.scale, saved.comment)
 }
 
 function selectZone(zone){
@@ -136,8 +177,11 @@ function selectZone(zone){
   if (zone) {
     zone.material.opacity = 0.4
     transformControls.attach(zone)
+    commentText.value = zone.userData.comment
+    commentPanel.classList.add('visible')
   } else {
     transformControls.detach()
+    commentPanel.classList.remove('visible')
   }
 }
 
@@ -157,10 +201,13 @@ function setCreatingZone(value){
 }
 
 window.addEventListener('keydown', (event) => {
+  if (event.target === commentText) return
+
   const key = event.key.toLowerCase()
   if (key === 'n') setCreatingZone(true)
   if (key === 'g') transformControls.setMode('translate')
   if (key === 's') transformControls.setMode('scale')
+  if (key === 'c') setCommentsVisible(!commentsVisible)
   if (key === 'delete') deleteSelectedZone()
   if (key === 'escape') {
     setCreatingZone(false)
@@ -213,9 +260,11 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight
   camera.updateProjectionMatrix()
   renderer.setSize(window.innerWidth, window.innerHeight)
+  labelRenderer.setSize(window.innerWidth, window.innerHeight)
 })
 
 renderer.setAnimationLoop(() =>{
   controls.update()
   renderer.render(scene, camera)
+  labelRenderer.render(scene, camera)
 })
