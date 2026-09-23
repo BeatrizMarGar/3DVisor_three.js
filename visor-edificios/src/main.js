@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { TransformControls } from 'three/addons/controls/TransformControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import {saveZones, loadZones} from './storage.js'
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x1e1e24)
@@ -96,9 +97,10 @@ scene.add(transformControls.getHelper())
 
 transformControls.addEventListener('dragging-changed', (event) => {
   controls.enabled = !event.value
+  if (!event.value) saveZones(zones) //solo guardo posición al soltar el gizmo
 })
 
-function createZone(point){
+function addZone(position, scale){
   const mesh = new THREE.Mesh(
     zoneGeometry,
     new THREE.MeshBasicMaterial({
@@ -110,13 +112,21 @@ function createZone(point){
   )
   mesh.add(new THREE.LineSegments(zoneEdgesGeometry, zoneEdgesMaterial))
 
-  const s = modelSize * 0.25
-  mesh.scale.set(s, s, s)
-  mesh.position.copy(point)
+  mesh.position.set(position.x, position.y, position.z)
+  mesh.scale.set(scale.x, scale.y, scale.z)
 
   scene.add(mesh)
   zones.push(mesh)
   return mesh
+}
+
+function createZone(point){
+  const s = modelSize * 0.25
+  return addZone(point, {x:s, y:s, z:s})
+}
+
+for (const saved of loadZones()) {
+  addZone(saved.position, saved.scale)
 }
 
 function selectZone(zone){
@@ -138,6 +148,7 @@ function deleteSelectedZone(){
   scene.remove(zone)
   zones.splice(zones.indexOf(zone), 1)
   zone.material.dispose()
+  saveZones(zones)
 }
 
 function setCreatingZone(value){
@@ -173,6 +184,7 @@ function onSceneClick(event){
     if (buildingHits.length > 0) {
       selectZone(createZone(buildingHits[0].point))
       setCreatingZone(false)
+      saveZones(zones)
     }
     return
   }
