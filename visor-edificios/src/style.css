@@ -93,3 +93,75 @@ canvas {
   border: 1px solid rgba(255, 255, 255, 0.2);
   white-space: nowrap;
 }
+
+.file-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.file-button {
+  flex: 1;
+  text-align: center;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.file-button:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+#file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+#file-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+}
+.file-thumb {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.file-action {
+  font-size: 11px;
+  padding: 3px 6px;
+  background: rgba(51, 170, 255, 0.25);
+  border: 1px solid rgba(51, 170, 255, 0.5);
+  color: inherit;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.file-remove {
+  font-size: 13px;
+  width: 18px;
+  height: 18px;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: inherit;
+  border-radius: 50%;
+  cursor: pointer;
+}

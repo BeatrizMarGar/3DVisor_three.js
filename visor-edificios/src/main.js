@@ -103,6 +103,81 @@ let creatingZone = false
 let commentsVisible = false
 const commentPanel = document.getElementById('comment-panel')
 const commentText = document.getElementById('comment-text')
+const fileInput = document.getElementById('file-input')
+const fileInput360 = document.getElementById('file-input-360')
+const fileList = document.getElementById('file-list')
+
+fileInput.addEventListener('change', () => {
+  addFilesToSelectedZone(fileInput.files, 'file')
+  fileInput.value = ""
+})
+
+fileInput360.addEventListener('change', () => {
+  addFilesToSelectedZone(fileInput360.files, 'image360')
+  fileInput360.value = ""
+})
+
+function addFilesToSelectedZone(chosenFiles, kind){
+  if(!selectedZone) return
+  for (const file of chosenFiles){
+    selectedZone.userData.files.push({
+      id: crypto.randomUUID(),
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      url: URL.createObjectURL(file),
+      kind
+    })
+  }
+  renderFileList()
+}
+
+function renderFileList(){
+  fileList.innerHTML = ''
+  if (!selectedZone) return
+
+  for (const file of selectedZone.userData.files){
+    const item = document.createElement('li')
+
+    if (file.type.startsWith('image/')){
+      const thumb = document.createElement('img')
+      thumb.src = file.url
+      thumb.className = 'file-thumb'
+      item.appendChild(thumb)
+    }
+
+    const name = document.createElement('span')
+    name.className = 'file-name'
+    name.textContent = file.name
+    item.appendChild(name)
+
+    if (file.kind === 'image360') {
+      const viewButton = document.createElement('button')
+      viewButton.textContent = 'Ver 360º'
+      viewButton.className = 'file-action'
+      item.appendChild(viewButton)
+    }
+
+    const removeButton = document.createElement('button')
+    removeButton.textContent = '×'
+    removeButton.className = 'file-remove'
+    removeButton.addEventListener('click', () => removeFile(file.id))
+    item.appendChild(removeButton)
+
+    fileList.appendChild(item)
+  }
+}
+
+function removeFile(id){
+  if (!selectedZone) return
+
+  const file = selectedZone.userData.files.find((f) => f.id === id)
+  if (file) URL.revokeObjectURL(file.url)
+
+  selectedZone.userData.files = selectedZone.userData.files.filter((f) => f.id !== id)
+  renderFileList()
+}
+
 
 commentText.addEventListener('input', () => {
   if (!selectedZone) return
@@ -141,6 +216,7 @@ function addZone(position, scale, comment = ""){
   mesh.add(label)
 
   mesh.userData.comment = comment
+  mesh.userData.files = []
   mesh.userData.label = label
   mesh.userData.labelElement = labelElement
   updateZoneLabel(mesh)
@@ -157,7 +233,7 @@ function updateZoneLabel(zone){
 
 function setCommentsVisible(value){
   commentsVisible = value
-  for (const zone of zones) updateZonelabel(zone)
+  for (const zone of zones) updateZoneLabel(zone)
 }
 
 
@@ -183,12 +259,15 @@ function selectZone(zone){
     transformControls.detach()
     commentPanel.classList.remove('visible')
   }
+
+  renderFileList()
 }
 
 function deleteSelectedZone(){
   if (!selectedZone) return
   const zone = selectedZone
   selectZone(null)
+  for (const file of zone.userData.files) URL.revokeObjectURL(file.url)
   scene.remove(zone)
   zones.splice(zones.indexOf(zone), 1)
   zone.material.dispose()

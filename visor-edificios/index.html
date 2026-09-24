@@ -25,6 +25,18 @@
     <div id="comment-panel">
       <h2>Comentario</h2>
       <textarea id="comment-text" placeholder="Escribe un comentario..."></textarea>
+      <h2>Archivos</h2>
+      <div class="file-buttons">
+        <label class="file-button">
+          Adjuntar archivo
+          <input type="file" id="file-input" multiple hidden>
+        </label>
+        <label class="file-button">
+          Adjuntar imagen 360
+          <input type="file" id="file-input-360" accept="image/*" hidden>
+        </label>
+      </div>
+      <ul id="file-list"></ul>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>
