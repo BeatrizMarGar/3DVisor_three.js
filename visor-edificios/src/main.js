@@ -104,15 +104,19 @@ function openPanorama(file){
 
   viewingPanorama = true
   controls.enabled = false
+  transformControls.enabled = false
   panoramaControls.enabled = true
   document.body.classList.add('panorama-mode')
+  renderer.domElement.classList.add('panorama-window')
 }
 
 function closePanorama(){
   viewingPanorama = false
   panoramaControls.enabled = false
   controls.enabled = true
+  transformControls.enabled = true
   document.body.classList.remove('panorama-mode')
+  renderer.domElement.classList.remove('panorama-window')
 }
 
 exitPanoramaButton.addEventListener('click', closePanorama)

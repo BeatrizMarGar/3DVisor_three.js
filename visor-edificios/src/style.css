@@ -207,3 +207,17 @@ body.panorama-mode #comment-panel {
   border-radius: 6px;
   pointer-events: none;
 }
+
+body.panorama-mode {
+  background: #000;
+}
+
+canvas.panorama-window {
+  position: fixed !important;
+  top: 8vh !important;
+  left: 8vw !important;
+  width: 84vw !important;
+  height: 84vh !important;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
