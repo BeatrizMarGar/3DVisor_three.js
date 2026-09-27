@@ -93,6 +93,49 @@ const sun = new THREE.DirectionalLight(0xffffff, 2)
 sun.position.set(5, 5, 5)
 scene.add(sun)
 
+const exitPanoramaButton = document.getElementById('exit-panorama')
+
+function openPanorama(file){
+  new THREE.TextureLoader().load(file.url, (texture) => {
+    texture.colorSpace = THREE.SRGBColorSpace
+    panoramaMaterial.map = texture
+    panoramaMaterial.needsUpdate = true
+  })
+
+  viewingPanorama = true
+  controls.enabled = false
+  panoramaControls.enabled = true
+  document.body.classList.add('panorama-mode')
+}
+
+function closePanorama(){
+  viewingPanorama = false
+  panoramaControls.enabled = false
+  controls.enabled = true
+  document.body.classList.remove('panorama-mode')
+}
+
+exitPanoramaButton.addEventListener('click', closePanorama)
+
+let viewingPanorama = false
+
+const panoramaScene = new THREE.Scene()
+const panoramaCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+panoramaCamera.position.set(0, 0, 0.01)
+
+const panoramaGeometry = new THREE.SphereGeometry(500, 60, 40)
+panoramaGeometry.scale(-1, 1, 1)
+const panoramaMaterial = new THREE.MeshBasicMaterial()
+const panoramaSphere = new THREE.Mesh(panoramaGeometry, panoramaMaterial)
+panoramaScene.add(panoramaSphere)
+
+const panoramaControls = new OrbitControls(panoramaCamera, renderer.domElement)
+panoramaControls.enableZoom = false
+panoramaControls.enablePan = false
+panoramaControls.enableDamping = true
+panoramaControls.rotateSpeed = -0.4
+panoramaControls.enabled = false
+
 const zoneGeometry = new THREE.BoxGeometry(1, 1, 1)
 const zoneEdgesGeometry = new THREE.EdgesGeometry(zoneGeometry)
 const zoneEdgesMaterial = new THREE.LineBasicMaterial({ color: 0x33aaff })
@@ -155,6 +198,7 @@ function renderFileList(){
       const viewButton = document.createElement('button')
       viewButton.textContent = 'Ver 360º'
       viewButton.className = 'file-action'
+      viewButton.addEventListener('click', () => openPanorama(file))
       item.appendChild(viewButton)
     }
 
@@ -282,6 +326,11 @@ function setCreatingZone(value){
 window.addEventListener('keydown', (event) => {
   if (event.target === commentText) return
 
+  if (viewingPanorama) {
+    if (event.key.toLowerCase() === 'escape') closePanorama()
+    return
+  }
+
   const key = event.key.toLowerCase()
   if (key === 'n') setCreatingZone(true)
   if (key === 'g') transformControls.setMode('translate')
@@ -293,6 +342,13 @@ window.addEventListener('keydown', (event) => {
     selectZone(null)
   }
 })
+
+renderer.domElement.addEventListener('wheel', (event) => {
+  if (!viewingPanorama) return
+  event.preventDefault()
+  panoramaCamera.fov = THREE.MathUtils.clamp(panoramaCamera.fov + event.deltaY * 0.05, 30, 90)
+  panoramaCamera.updateProjectionMatrix()
+}, { passive: false })
 
 const raycaster = new THREE.Raycaster()
 const pointer = new THREE.Vector2()
@@ -338,12 +394,19 @@ renderer.domElement.addEventListener('pointerup', (event) => {
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight
   camera.updateProjectionMatrix()
+  panoramaCamera.aspect = window.innerWidth / window.innerHeight
+  panoramaCamera.updateProjectionMatrix()
   renderer.setSize(window.innerWidth, window.innerHeight)
   labelRenderer.setSize(window.innerWidth, window.innerHeight)
 })
 
-renderer.setAnimationLoop(() =>{
-  controls.update()
-  renderer.render(scene, camera)
-  labelRenderer.render(scene, camera)
+renderer.setAnimationLoop(() => {
+  if (viewingPanorama) {
+    panoramaControls.update()
+    renderer.render(panoramaScene, panoramaCamera)
+  } else {
+    controls.update()
+    renderer.render(scene, camera)
+    labelRenderer.render(scene, camera)
+  }
 })
