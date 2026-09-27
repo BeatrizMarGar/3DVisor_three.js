@@ -1,22 +1,24 @@
-const STORAGE_KEY = "visor-edificios:zones"
+function storageKey(buildingId){
+  return `visor-edificios:zones:${buildingId}`
+}
 
-export function saveZones(zones){
+export function saveZones(buildingId, zones){
   const data = zones.map((zone) => ({
     id: zone.userData.id,
     position: { x: zone.position.x, y: zone.position.y, z: zone.position.z },
     scale: { x: zone.scale.x, y: zone.scale.y, z: zone.scale.z },
     comment: zone.userData.comment
   }))
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  localStorage.setItem(storageKey(buildingId), JSON.stringify(data))
 }
 
-export function loadZones(){
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
-    try {
-        return JSON.parse(raw)
-    } catch (error) {
-        console.error('No se han podido leer las zonas guardadas:', error)
-        return[]
-    }
+export function loadZones(buildingId){
+  const raw = localStorage.getItem(storageKey(buildingId))
+  if (!raw) return []
+  try {
+    return JSON.parse(raw)
+  } catch (error) {
+    console.error('No se han podido leer las zonas guardadas:', error)
+    return []
+  }
 }

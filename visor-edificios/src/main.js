@@ -6,471 +6,477 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import {saveZones, loadZones} from './storage.js'
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js' //render2D para texto
 import { saveFileRecord, loadFileRecords, deleteFileRecord, deleteZoneFiles } from './fileStorage.js'
+import { BUILT_IN_BUILDINGS } from './buildings.js'
 
-const scene = new THREE.Scene()
-scene.background = new THREE.Color(0x1e1e24)
+function initViewer(buildingConfig){
+  const buildingId = buildingConfig.id
 
-const camera = new THREE.PerspectiveCamera(
-  60,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  100
-)
+  const scene = new THREE.Scene()
+  scene.background = new THREE.Color(0x1e1e24)
 
-camera.position.set(3, 2, 4)
-camera.lookAt(0,0,0)
+  const camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    100
+  )
 
-const renderer = new THREE.WebGLRenderer({antialias: true})
-renderer.setSize(window.innerWidth, window.innerHeight)
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-document.body.appendChild(renderer.domElement)
+  camera.position.set(3, 2, 4)
+  camera.lookAt(0,0,0)
 
-const labelRenderer = new CSS2DRenderer()
-labelRenderer.setSize (window.innerWidth, window.innerHeight)
-labelRenderer.domElement.style.position = "absolute"
-labelRenderer.domElement.style.top = "0px"
-labelRenderer.domElement.style.left = "0px"
-labelRenderer.domElement.style.pointerEvents = "none"
-document.body.appendChild(labelRenderer.domElement)
+  const renderer = new THREE.WebGLRenderer({antialias: true})
+  renderer.setSize(window.innerWidth, window.innerHeight)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  document.body.appendChild(renderer.domElement)
 
-const controls = new OrbitControls(camera, renderer.domElement)
-controls.enableDamping = true
-controls.dampingFactor = 0.05
-controls.minDistance = 1.5
-controls.maxDistance = 20
-controls.maxPolarAngle = Math.PI / 2 //fórmula para no pasar debajo del suelo
-controls.target.set(0,0,0)
+  const labelRenderer = new CSS2DRenderer()
+  labelRenderer.setSize (window.innerWidth, window.innerHeight)
+  labelRenderer.domElement.style.position = "absolute"
+  labelRenderer.domElement.style.top = "0px"
+  labelRenderer.domElement.style.left = "0px"
+  labelRenderer.domElement.style.pointerEvents = "none"
+  document.body.appendChild(labelRenderer.domElement)
 
-scene.add(new THREE.GridHelper(20,20, 0x555555, 0x333333)) //para ayudar a la localización al mover el ratón
+  const controls = new OrbitControls(camera, renderer.domElement)
+  controls.enableDamping = true
+  controls.dampingFactor = 0.05
+  controls.minDistance = 1.5
+  controls.maxDistance = 20
+  controls.maxPolarAngle = Math.PI / 2 //fórmula para no pasar debajo del suelo
+  controls.target.set(0,0,0)
 
-let building = null
-let modelSize = 1
+  scene.add(new THREE.GridHelper(20,20, 0x555555, 0x333333)) //para ayudar a la localización al mover el ratón
 
-const loader = new GLTFLoader()
+  let building = null
+  let modelSize = 1
 
-loader.load(
-  '/models/low_poly_building.glb',
-  (gltf) => {
-    building = gltf.scene
-    scene.add(building)
-    frameModel(building)
-  },
-  (progress) => {
-    if (progress.total){
-      console.log(`Cargando: ${Math.round((progress.loaded / progress.total) * 100)}%`)
+  const loader = new GLTFLoader()
+
+  loader.load(
+    buildingConfig.modelUrl,
+    (gltf) => {
+      building = gltf.scene
+      scene.add(building)
+      frameModel(building)
+    },
+    (progress) => {
+      if (progress.total){
+        console.log(`Cargando: ${Math.round((progress.loaded / progress.total) * 100)}%`)
+      }
+    },
+    (error) => {
+      console.error('Error cargando el modelo:', error)
     }
-  },
-  (error) => {
-    console.error('Error cargando el modelo:', error)
+  )
+
+  function frameModel(object){
+    const box = new THREE.Box3().setFromObject(object)
+    const size = box.getSize(new THREE.Vector3())
+    const center = box.getCenter(new THREE.Vector3())
+
+    object.position.x -= center.x
+    object.position.y -= box.min.y
+    object.position.z -= center.z
+
+    const maxDim = Math.max(size.x, size.y, size.z)
+    modelSize = maxDim
+
+    const distance = maxDim * 1.8
+    camera.position.set(distance, distance * 0.7, distance)
+    camera.near = maxDim / 100
+    camera.far = maxDim * 20
+    camera.updateProjectionMatrix()
+
+    controls.target.set(0, size.y / 2, 0)
+    controls.minDistance = maxDim * 0.3
+    controls.maxDistance = maxDim * 5
+    controls.update()
   }
-)
 
-function frameModel(object){
-  const box = new THREE.Box3().setFromObject(object)
-  const size = box.getSize(new THREE.Vector3())
-  const center = box.getCenter(new THREE.Vector3())
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5))
+  const sun = new THREE.DirectionalLight(0xffffff, 2)
+  sun.position.set(5, 5, 5)
+  scene.add(sun)
 
-  object.position.x -= center.x
-  object.position.y -= box.min.y
-  object.position.z -= center.z
+  const exitPanoramaButton = document.getElementById('exit-panorama')
 
-  const maxDim = Math.max(size.x, size.y, size.z)
-  modelSize = maxDim
+  function openPanorama(file){
+    new THREE.TextureLoader().load(file.url, (texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace
+      panoramaMaterial.map = texture
+      panoramaMaterial.needsUpdate = true
+    })
 
-  const distance = maxDim * 1.8
-  camera.position.set(distance, distance * 0.7, distance)
-  camera.near = maxDim / 100
-  camera.far = maxDim * 20
-  camera.updateProjectionMatrix()
+    viewingPanorama = true
+    controls.enabled = false
+    transformControls.enabled = false
+    panoramaControls.enabled = true
+    document.body.classList.add('panorama-mode')
+    renderer.domElement.classList.add('panorama-window')
+  }
 
-  controls.target.set(0, size.y / 2, 0)
-  controls.minDistance = maxDim * 0.3
-  controls.maxDistance = maxDim * 5
-  controls.update()
-}
+  function closePanorama(){
+    viewingPanorama = false
+    panoramaControls.enabled = false
+    controls.enabled = true
+    transformControls.enabled = true
+    document.body.classList.remove('panorama-mode')
+    renderer.domElement.classList.remove('panorama-window')
+  }
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.5))
-const sun = new THREE.DirectionalLight(0xffffff, 2)
-sun.position.set(5, 5, 5)
-scene.add(sun)
+  exitPanoramaButton.addEventListener('click', closePanorama)
 
-const exitPanoramaButton = document.getElementById('exit-panorama')
+  let viewingPanorama = false
 
-function openPanorama(file){
-  new THREE.TextureLoader().load(file.url, (texture) => {
-    texture.colorSpace = THREE.SRGBColorSpace
-    panoramaMaterial.map = texture
-    panoramaMaterial.needsUpdate = true
+  const panoramaScene = new THREE.Scene()
+  const panoramaCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+  panoramaCamera.position.set(0, 0, 0.01)
+
+  const panoramaGeometry = new THREE.SphereGeometry(500, 60, 40)
+  panoramaGeometry.scale(-1, 1, 1)
+  const panoramaMaterial = new THREE.MeshBasicMaterial()
+  const panoramaSphere = new THREE.Mesh(panoramaGeometry, panoramaMaterial)
+  panoramaScene.add(panoramaSphere)
+
+  const panoramaControls = new OrbitControls(panoramaCamera, renderer.domElement)
+  panoramaControls.enableZoom = false
+  panoramaControls.enablePan = false
+  panoramaControls.enableDamping = true
+  panoramaControls.rotateSpeed = -0.4
+  panoramaControls.enabled = false
+
+  const zoneGeometry = new THREE.BoxGeometry(1, 1, 1)
+  const zoneEdgesGeometry = new THREE.EdgesGeometry(zoneGeometry)
+  const zoneEdgesMaterial = new THREE.LineBasicMaterial({ color: 0x33aaff })
+
+  const zones = []
+  let selectedZone = null
+  let creatingZone = false
+  let commentsVisible = false
+  const commentPanel = document.getElementById('comment-panel')
+  const commentText = document.getElementById('comment-text')
+  const fileInput = document.getElementById('file-input')
+  const fileInput360 = document.getElementById('file-input-360')
+  const fileList = document.getElementById('file-list')
+
+  const imageView = document.getElementById('image-view')
+  const imageViewImg = document.getElementById('image-view-img')
+  const exitImageViewButton = document.getElementById('exit-image-view')
+
+  function openImageView(file){
+    imageViewImg.src = file.url
+    imageView.classList.add('visible')
+  }
+
+  function closeImageView(){
+    imageView.classList.remove('visible')
+    imageViewImg.src = ''
+  }
+
+  exitImageViewButton.addEventListener('click', closeImageView)
+
+  imageView.addEventListener('click', (event) => {
+    if (event.target === imageView) closeImageView()
   })
 
-  viewingPanorama = true
-  controls.enabled = false
-  transformControls.enabled = false
-  panoramaControls.enabled = true
-  document.body.classList.add('panorama-mode')
-  renderer.domElement.classList.add('panorama-window')
-}
+  fileInput.addEventListener('change', () => {
+    addFilesToSelectedZone(fileInput.files, 'file')
+    fileInput.value = ""
+  })
 
-function closePanorama(){
-  viewingPanorama = false
-  panoramaControls.enabled = false
-  controls.enabled = true
-  transformControls.enabled = true
-  document.body.classList.remove('panorama-mode')
-  renderer.domElement.classList.remove('panorama-window')
-}
+  fileInput360.addEventListener('change', () => {
+    addFilesToSelectedZone(fileInput360.files, 'image360')
+    fileInput360.value = ""
+  })
 
-exitPanoramaButton.addEventListener('click', closePanorama)
+  function addFilesToSelectedZone(chosenFiles, kind){
+    if (!selectedZone) return
 
-let viewingPanorama = false
+    for (const file of chosenFiles) {
+      const id = crypto.randomUUID()
 
-const panoramaScene = new THREE.Scene()
-const panoramaCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
-panoramaCamera.position.set(0, 0, 0.01)
+      selectedZone.userData.files.push({
+        id,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        url: URL.createObjectURL(file),
+        kind
+      })
 
-const panoramaGeometry = new THREE.SphereGeometry(500, 60, 40)
-panoramaGeometry.scale(-1, 1, 1)
-const panoramaMaterial = new THREE.MeshBasicMaterial()
-const panoramaSphere = new THREE.Mesh(panoramaGeometry, panoramaMaterial)
-panoramaScene.add(panoramaSphere)
-
-const panoramaControls = new OrbitControls(panoramaCamera, renderer.domElement)
-panoramaControls.enableZoom = false
-panoramaControls.enablePan = false
-panoramaControls.enableDamping = true
-panoramaControls.rotateSpeed = -0.4
-panoramaControls.enabled = false
-
-const zoneGeometry = new THREE.BoxGeometry(1, 1, 1)
-const zoneEdgesGeometry = new THREE.EdgesGeometry(zoneGeometry)
-const zoneEdgesMaterial = new THREE.LineBasicMaterial({ color: 0x33aaff })
-
-const zones = []
-let selectedZone = null
-let creatingZone = false
-let commentsVisible = false
-const commentPanel = document.getElementById('comment-panel')
-const commentText = document.getElementById('comment-text')
-const fileInput = document.getElementById('file-input')
-const fileInput360 = document.getElementById('file-input-360')
-const fileList = document.getElementById('file-list')
-
-const imageView = document.getElementById('image-view')
-const imageViewImg = document.getElementById('image-view-img')
-const exitImageViewButton = document.getElementById('exit-image-view')
-
-function openImageView(file){
-  imageViewImg.src = file.url
-  imageView.classList.add('visible')
-}
-
-function closeImageView(){
-  imageView.classList.remove('visible')
-  imageViewImg.src = ''
-}
-
-exitImageViewButton.addEventListener('click', closeImageView)
-
-imageView.addEventListener('click', (event) => {
-  if (event.target === imageView) closeImageView()
-})
-
-fileInput.addEventListener('change', () => {
-  addFilesToSelectedZone(fileInput.files, 'file')
-  fileInput.value = ""
-})
-
-fileInput360.addEventListener('change', () => {
-  addFilesToSelectedZone(fileInput360.files, 'image360')
-  fileInput360.value = ""
-})
-
-function addFilesToSelectedZone(chosenFiles, kind){
-  if (!selectedZone) return
-
-  for (const file of chosenFiles) {
-    const id = crypto.randomUUID()
-
-    selectedZone.userData.files.push({
-      id,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      url: URL.createObjectURL(file),
-      kind
-    })
-
-    saveFileRecord({
-      id,
-      zoneId: selectedZone.userData.id,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      kind,
-      blob: file
-    })
-  }
-
-  renderFileList()
-}
-
-function renderFileList(){
-  fileList.innerHTML = ''
-  if (!selectedZone) return
-
-  for (const file of selectedZone.userData.files){
-    const item = document.createElement('li')
-
-    if (file.type.startsWith('image/')){
-      const thumb = document.createElement('img')
-      thumb.src = file.url
-      thumb.className = 'file-thumb'
-      thumb.addEventListener('click', () => openImageView(file))
-      item.appendChild(thumb)
+      saveFileRecord({
+        id,
+        zoneId: selectedZone.userData.id,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        kind,
+        blob: file
+      })
     }
 
-    const name = document.createElement('span')
-    name.className = 'file-name'
-    name.textContent = file.name
-    item.appendChild(name)
+    renderFileList()
+  }
 
-    if (file.kind === 'image360') {
-      const viewButton = document.createElement('button')
-      viewButton.textContent = 'Ver 360º'
-      viewButton.className = 'file-action'
-      viewButton.addEventListener('click', () => openPanorama(file))
-      item.appendChild(viewButton)
+  function renderFileList(){
+    fileList.innerHTML = ''
+    if (!selectedZone) return
+
+    for (const file of selectedZone.userData.files){
+      const item = document.createElement('li')
+
+      if (file.type.startsWith('image/')){
+        const thumb = document.createElement('img')
+        thumb.src = file.url
+        thumb.className = 'file-thumb'
+        thumb.addEventListener('click', () => openImageView(file))
+        item.appendChild(thumb)
+      }
+
+      const name = document.createElement('span')
+      name.className = 'file-name'
+      name.textContent = file.name
+      item.appendChild(name)
+
+      if (file.kind === 'image360') {
+        const viewButton = document.createElement('button')
+        viewButton.textContent = 'Ver 360º'
+        viewButton.className = 'file-action'
+        viewButton.addEventListener('click', () => openPanorama(file))
+        item.appendChild(viewButton)
+      }
+
+      const removeButton = document.createElement('button')
+      removeButton.textContent = '×'
+      removeButton.className = 'file-remove'
+      removeButton.addEventListener('click', () => removeFile(file.id))
+      item.appendChild(removeButton)
+
+      fileList.appendChild(item)
+    }
+  }
+
+  async function loadZoneFiles(zone){
+    const records = await loadFileRecords(zone.userData.id)
+    for (const record of records) {
+      zone.userData.files.push({
+        id: record.id,
+        name: record.name,
+        size: record.size,
+        type: record.type,
+        kind: record.kind,
+        url: URL.createObjectURL(record.blob)
+      })
+    }
+    if (selectedZone === zone) renderFileList()
+  }
+
+  function removeFile(id){
+    if (!selectedZone) return
+
+    const file = selectedZone.userData.files.find((f) => f.id === id)
+    if (file) URL.revokeObjectURL(file.url)
+
+    selectedZone.userData.files = selectedZone.userData.files.filter((f) => f.id !== id)
+    deleteFileRecord(id)
+    renderFileList()
+  }
+
+
+  commentText.addEventListener('input', () => {
+    if (!selectedZone) return
+    selectedZone.userData.comment = commentText.value
+    updateZoneLabel(selectedZone)
+    saveZones(buildingId, zones)
+  })
+
+  const transformControls = new TransformControls(camera, renderer.domElement)
+  scene.add(transformControls.getHelper())
+
+  transformControls.addEventListener('dragging-changed', (event) => {
+    controls.enabled = !event.value
+    if (!event.value) saveZones(buildingId, zones) //solo guardo posición al soltar el gizmo
+  })
+
+  function addZone(position, scale, comment = "", id = crypto.randomUUID()){
+    const mesh = new THREE.Mesh(
+      zoneGeometry,
+      new THREE.MeshBasicMaterial({
+        color: 0x33aaff,
+        transparent: true,
+        opacity: 0.15,
+        depthWrite: false
+      })
+    )
+    mesh.add(new THREE.LineSegments(zoneEdgesGeometry, zoneEdgesMaterial))
+
+    mesh.position.set(position.x, position.y, position.z)
+    mesh.scale.set(scale.x, scale.y, scale.z)
+
+    const labelElement = document.createElement("div")
+    labelElement.className = "zone-comment-bubble"
+    const label = new CSS2DObject(labelElement)
+    label.position.set(0, 0.5, 0)
+    mesh.add(label)
+
+    mesh.userData.id = id
+    mesh.userData.comment = comment
+    mesh.userData.files = []
+    mesh.userData.label = label
+    mesh.userData.labelElement = labelElement
+    updateZoneLabel(mesh)
+    loadZoneFiles(mesh)
+
+    scene.add(mesh)
+    zones.push(mesh)
+    return mesh
+  }
+  function updateZoneLabel(zone){
+    zone.userData.labelElement.textContent = zone.userData.comment
+    zone.userData.label.visible = commentsVisible && zone.userData.comment.trim() !== ""
+  }
+
+  function setCommentsVisible(value){
+    commentsVisible = value
+    for (const zone of zones) updateZoneLabel(zone)
+  }
+
+
+  function createZone(point){
+    const s = modelSize * 0.25
+    return addZone(point, {x:s, y:s, z:s})
+  }
+
+  for (const saved of loadZones(buildingId)) {
+    addZone(saved.position, saved.scale, saved.comment, saved.id)
+  }
+
+  function selectZone(zone){
+    if (selectedZone) selectedZone.material.opacity = 0.15
+    selectedZone = zone
+
+    if (zone) {
+      zone.material.opacity = 0.4
+      transformControls.attach(zone)
+      commentText.value = zone.userData.comment
+      commentPanel.classList.add('visible')
+    } else {
+      transformControls.detach()
+      commentPanel.classList.remove('visible')
     }
 
-    const removeButton = document.createElement('button')
-    removeButton.textContent = '×'
-    removeButton.className = 'file-remove'
-    removeButton.addEventListener('click', () => removeFile(file.id))
-    item.appendChild(removeButton)
-
-    fileList.appendChild(item)
-  }
-}
-
-async function loadZoneFiles(zone){
-  const records = await loadFileRecords(zone.userData.id)
-  for (const record of records) {
-    zone.userData.files.push({
-      id: record.id,
-      name: record.name,
-      size: record.size,
-      type: record.type,
-      kind: record.kind,
-      url: URL.createObjectURL(record.blob)
-    })
-  }
-  if (selectedZone === zone) renderFileList()
-}
-
-function removeFile(id){
-  if (!selectedZone) return
-
-  const file = selectedZone.userData.files.find((f) => f.id === id)
-  if (file) URL.revokeObjectURL(file.url)
-
-  selectedZone.userData.files = selectedZone.userData.files.filter((f) => f.id !== id)
-  deleteFileRecord(id)
-  renderFileList()
-}
-
-
-commentText.addEventListener('input', () => {
-  if (!selectedZone) return
-  selectedZone.userData.comment = commentText.value
-  updateZoneLabel(selectedZone)
-  saveZones(zones)
-})
-
-const transformControls = new TransformControls(camera, renderer.domElement)
-scene.add(transformControls.getHelper())
-
-transformControls.addEventListener('dragging-changed', (event) => {
-  controls.enabled = !event.value
-  if (!event.value) saveZones(zones) //solo guardo posición al soltar el gizmo
-})
-
-function addZone(position, scale, comment = "", id = crypto.randomUUID()){
-  const mesh = new THREE.Mesh(
-    zoneGeometry,
-    new THREE.MeshBasicMaterial({
-      color: 0x33aaff,
-      transparent: true,
-      opacity: 0.15,
-      depthWrite: false
-    })
-  )
-  mesh.add(new THREE.LineSegments(zoneEdgesGeometry, zoneEdgesMaterial))
-
-  mesh.position.set(position.x, position.y, position.z)
-  mesh.scale.set(scale.x, scale.y, scale.z)
-
-  const labelElement = document.createElement("div")
-  labelElement.className = "zone-comment-bubble"
-  const label = new CSS2DObject(labelElement)
-  label.position.set(0, 0.5, 0)
-  mesh.add(label)
-
-  mesh.userData.id = id
-  mesh.userData.comment = comment
-  mesh.userData.files = []
-  mesh.userData.label = label
-  mesh.userData.labelElement = labelElement
-  updateZoneLabel(mesh)
-  loadZoneFiles(mesh)
-
-  scene.add(mesh)
-  zones.push(mesh)
-  return mesh
-}
-function updateZoneLabel(zone){
-  zone.userData.labelElement.textContent = zone.userData.comment
-  zone.userData.label.visible = commentsVisible && zone.userData.comment.trim() !== ""
-}
-
-function setCommentsVisible(value){
-  commentsVisible = value
-  for (const zone of zones) updateZoneLabel(zone)
-}
-
-
-function createZone(point){
-  const s = modelSize * 0.25
-  return addZone(point, {x:s, y:s, z:s})
-}
-
-for (const saved of loadZones()) {
-  addZone(saved.position, saved.scale, saved.comment, saved.id)
-}
-
-function selectZone(zone){
-  if (selectedZone) selectedZone.material.opacity = 0.15
-  selectedZone = zone
-
-  if (zone) {
-    zone.material.opacity = 0.4
-    transformControls.attach(zone)
-    commentText.value = zone.userData.comment
-    commentPanel.classList.add('visible')
-  } else {
-    transformControls.detach()
-    commentPanel.classList.remove('visible')
+    renderFileList()
   }
 
-  renderFileList()
-}
-
-function deleteSelectedZone(){
-  if (!selectedZone) return
-  const zone = selectedZone
-  selectZone(null)
-  for (const file of zone.userData.files) URL.revokeObjectURL(file.url)
-  deleteZoneFiles(zone.userData.id)
-  scene.remove(zone)
-  zones.splice(zones.indexOf(zone), 1)
-  zone.material.dispose()
-  saveZones(zones)
-}
-
-function setCreatingZone(value){
-  creatingZone = value
-  renderer.domElement.style.cursor = value ? 'crosshair' : 'auto'
-}
-
-window.addEventListener('keydown', (event) => {
-  if (event.target === commentText) return
-
-  if (viewingPanorama) {
-    if (event.key.toLowerCase() === 'escape') closePanorama()
-    return
-  }
-  
-  if (imageView.classList.contains('visible')) {
-    if (event.key.toLowerCase() === 'escape') closeImageView()
-    return
-  }
-
-  const key = event.key.toLowerCase()
-  if (key === 'n') setCreatingZone(true)
-  if (key === 'g') transformControls.setMode('translate')
-  if (key === 's') transformControls.setMode('scale')
-  if (key === 'c') setCommentsVisible(!commentsVisible)
-  if (key === 'delete') deleteSelectedZone()
-  if (key === 'escape') {
-    setCreatingZone(false)
+  function deleteSelectedZone(){
+    if (!selectedZone) return
+    const zone = selectedZone
     selectZone(null)
+    for (const file of zone.userData.files) URL.revokeObjectURL(file.url)
+    deleteZoneFiles(zone.userData.id)
+    scene.remove(zone)
+    zones.splice(zones.indexOf(zone), 1)
+    zone.material.dispose()
+    saveZones(buildingId, zones)
   }
-})
 
-renderer.domElement.addEventListener('wheel', (event) => {
-  if (!viewingPanorama) return
-  event.preventDefault()
-  panoramaCamera.fov = THREE.MathUtils.clamp(panoramaCamera.fov + event.deltaY * 0.05, 30, 90)
-  panoramaCamera.updateProjectionMatrix()
-}, { passive: false })
+  function setCreatingZone(value){
+    creatingZone = value
+    renderer.domElement.style.cursor = value ? 'crosshair' : 'auto'
+  }
 
-const raycaster = new THREE.Raycaster()
-const pointer = new THREE.Vector2()
+  window.addEventListener('keydown', (event) => {
+    if (event.target === commentText) return
 
-function onSceneClick(event){
-  const rect = renderer.domElement.getBoundingClientRect()
-  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
-  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
-
-  raycaster.setFromCamera(pointer, camera)
-
-  if (creatingZone) {
-    if (!building) return
-    const buildingHits = raycaster.intersectObject(building, true)
-    if (buildingHits.length > 0) {
-      selectZone(createZone(buildingHits[0].point))
-      setCreatingZone(false)
-      saveZones(zones)
+    if (viewingPanorama) {
+      if (event.key.toLowerCase() === 'escape') closePanorama()
+      return
     }
-    return
+
+    if (imageView.classList.contains('visible')) {
+      if (event.key.toLowerCase() === 'escape') closeImageView()
+      return
+    }
+
+    const key = event.key.toLowerCase()
+    if (key === 'n') setCreatingZone(true)
+    if (key === 'g') transformControls.setMode('translate')
+    if (key === 's') transformControls.setMode('scale')
+    if (key === 'c') setCommentsVisible(!commentsVisible)
+    if (key === 'delete') deleteSelectedZone()
+    if (key === 'escape') {
+      setCreatingZone(false)
+      selectZone(null)
+    }
+  })
+
+  renderer.domElement.addEventListener('wheel', (event) => {
+    if (!viewingPanorama) return
+    event.preventDefault()
+    panoramaCamera.fov = THREE.MathUtils.clamp(panoramaCamera.fov + event.deltaY * 0.05, 30, 90)
+    panoramaCamera.updateProjectionMatrix()
+  }, { passive: false })
+
+  const raycaster = new THREE.Raycaster()
+  const pointer = new THREE.Vector2()
+
+  function onSceneClick(event){
+    const rect = renderer.domElement.getBoundingClientRect()
+    pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+    pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+
+    raycaster.setFromCamera(pointer, camera)
+
+    if (creatingZone) {
+      if (!building) return
+      const buildingHits = raycaster.intersectObject(building, true)
+      if (buildingHits.length > 0) {
+        selectZone(createZone(buildingHits[0].point))
+        setCreatingZone(false)
+        saveZones(buildingId, zones)
+      }
+      return
+    }
+
+    const zoneHits = raycaster.intersectObjects(zones, false)
+    selectZone(zoneHits.length > 0 ? zoneHits[0].object : null)
   }
 
-  const zoneHits = raycaster.intersectObjects(zones, false)
-  selectZone(zoneHits.length > 0 ? zoneHits[0].object : null)
+  let downX = 0
+  let downY = 0
+
+  renderer.domElement.addEventListener('pointerdown', (event) => {
+    downX = event.clientX
+    downY = event.clientY
+  })
+
+  renderer.domElement.addEventListener('pointerup', (event) => {
+    if (event.button !== 0) return
+    if (transformControls.axis) return
+    const moved = Math.hypot(event.clientX - downX, event.clientY - downY)
+    if (moved > 5) return
+    onSceneClick(event)
+  })
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight
+    camera.updateProjectionMatrix()
+    panoramaCamera.aspect = window.innerWidth / window.innerHeight
+    panoramaCamera.updateProjectionMatrix()
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    labelRenderer.setSize(window.innerWidth, window.innerHeight)
+  })
+
+  renderer.setAnimationLoop(() => {
+    if (viewingPanorama) {
+      panoramaControls.update()
+      renderer.render(panoramaScene, panoramaCamera)
+    } else {
+      controls.update()
+      renderer.render(scene, camera)
+      labelRenderer.render(scene, camera)
+    }
+  })
 }
 
-let downX = 0
-let downY = 0
-
-renderer.domElement.addEventListener('pointerdown', (event) => {
-  downX = event.clientX
-  downY = event.clientY
-})
-
-renderer.domElement.addEventListener('pointerup', (event) => {
-  if (event.button !== 0) return
-  if (transformControls.axis) return
-  const moved = Math.hypot(event.clientX - downX, event.clientY - downY)
-  if (moved > 5) return
-  onSceneClick(event)
-})
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight
-  camera.updateProjectionMatrix()
-  panoramaCamera.aspect = window.innerWidth / window.innerHeight
-  panoramaCamera.updateProjectionMatrix()
-  renderer.setSize(window.innerWidth, window.innerHeight)
-  labelRenderer.setSize(window.innerWidth, window.innerHeight)
-})
-
-renderer.setAnimationLoop(() => {
-  if (viewingPanorama) {
-    panoramaControls.update()
-    renderer.render(panoramaScene, panoramaCamera)
-  } else {
-    controls.update()
-    renderer.render(scene, camera)
-    labelRenderer.render(scene, camera)
-  }
-})
-
+initViewer(BUILT_IN_BUILDINGS[0])
