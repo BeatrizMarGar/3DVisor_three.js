@@ -5,6 +5,7 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import {saveZones, loadZones} from './storage.js'
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js' //render2D para texto
+import { saveFileRecord, loadFileRecords, deleteFileRecord, deleteZoneFiles } from './fileStorage.js'
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x1e1e24)
@@ -154,6 +155,26 @@ const fileInput = document.getElementById('file-input')
 const fileInput360 = document.getElementById('file-input-360')
 const fileList = document.getElementById('file-list')
 
+const imageView = document.getElementById('image-view')
+const imageViewImg = document.getElementById('image-view-img')
+const exitImageViewButton = document.getElementById('exit-image-view')
+
+function openImageView(file){
+  imageViewImg.src = file.url
+  imageView.classList.add('visible')
+}
+
+function closeImageView(){
+  imageView.classList.remove('visible')
+  imageViewImg.src = ''
+}
+
+exitImageViewButton.addEventListener('click', closeImageView)
+
+imageView.addEventListener('click', (event) => {
+  if (event.target === imageView) closeImageView()
+})
+
 fileInput.addEventListener('change', () => {
   addFilesToSelectedZone(fileInput.files, 'file')
   fileInput.value = ""
@@ -165,17 +186,31 @@ fileInput360.addEventListener('change', () => {
 })
 
 function addFilesToSelectedZone(chosenFiles, kind){
-  if(!selectedZone) return
-  for (const file of chosenFiles){
+  if (!selectedZone) return
+
+  for (const file of chosenFiles) {
+    const id = crypto.randomUUID()
+
     selectedZone.userData.files.push({
-      id: crypto.randomUUID(),
+      id,
       name: file.name,
       size: file.size,
       type: file.type,
       url: URL.createObjectURL(file),
       kind
     })
+
+    saveFileRecord({
+      id,
+      zoneId: selectedZone.userData.id,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      kind,
+      blob: file
+    })
   }
+
   renderFileList()
 }
 
@@ -190,6 +225,7 @@ function renderFileList(){
       const thumb = document.createElement('img')
       thumb.src = file.url
       thumb.className = 'file-thumb'
+      thumb.addEventListener('click', () => openImageView(file))
       item.appendChild(thumb)
     }
 
@@ -216,6 +252,21 @@ function renderFileList(){
   }
 }
 
+async function loadZoneFiles(zone){
+  const records = await loadFileRecords(zone.userData.id)
+  for (const record of records) {
+    zone.userData.files.push({
+      id: record.id,
+      name: record.name,
+      size: record.size,
+      type: record.type,
+      kind: record.kind,
+      url: URL.createObjectURL(record.blob)
+    })
+  }
+  if (selectedZone === zone) renderFileList()
+}
+
 function removeFile(id){
   if (!selectedZone) return
 
@@ -223,6 +274,7 @@ function removeFile(id){
   if (file) URL.revokeObjectURL(file.url)
 
   selectedZone.userData.files = selectedZone.userData.files.filter((f) => f.id !== id)
+  deleteFileRecord(id)
   renderFileList()
 }
 
@@ -242,7 +294,7 @@ transformControls.addEventListener('dragging-changed', (event) => {
   if (!event.value) saveZones(zones) //solo guardo posición al soltar el gizmo
 })
 
-function addZone(position, scale, comment = ""){
+function addZone(position, scale, comment = "", id = crypto.randomUUID()){
   const mesh = new THREE.Mesh(
     zoneGeometry,
     new THREE.MeshBasicMaterial({
@@ -263,17 +315,18 @@ function addZone(position, scale, comment = ""){
   label.position.set(0, 0.5, 0)
   mesh.add(label)
 
+  mesh.userData.id = id
   mesh.userData.comment = comment
   mesh.userData.files = []
   mesh.userData.label = label
   mesh.userData.labelElement = labelElement
   updateZoneLabel(mesh)
+  loadZoneFiles(mesh)
 
   scene.add(mesh)
   zones.push(mesh)
   return mesh
 }
-
 function updateZoneLabel(zone){
   zone.userData.labelElement.textContent = zone.userData.comment
   zone.userData.label.visible = commentsVisible && zone.userData.comment.trim() !== ""
@@ -291,7 +344,7 @@ function createZone(point){
 }
 
 for (const saved of loadZones()) {
-  addZone(saved.position, saved.scale, saved.comment)
+  addZone(saved.position, saved.scale, saved.comment, saved.id)
 }
 
 function selectZone(zone){
@@ -316,6 +369,7 @@ function deleteSelectedZone(){
   const zone = selectedZone
   selectZone(null)
   for (const file of zone.userData.files) URL.revokeObjectURL(file.url)
+  deleteZoneFiles(zone.userData.id)
   scene.remove(zone)
   zones.splice(zones.indexOf(zone), 1)
   zone.material.dispose()
@@ -332,6 +386,11 @@ window.addEventListener('keydown', (event) => {
 
   if (viewingPanorama) {
     if (event.key.toLowerCase() === 'escape') closePanorama()
+    return
+  }
+  
+  if (imageView.classList.contains('visible')) {
+    if (event.key.toLowerCase() === 'escape') closeImageView()
     return
   }
 
@@ -414,3 +473,4 @@ renderer.setAnimationLoop(() => {
     labelRenderer.render(scene, camera)
   }
 })
+

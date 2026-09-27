@@ -221,3 +221,41 @@ canvas.panorama-window {
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
 }
+#image-view {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 20;
+  align-items: center;
+  justify-content: center;
+}
+#image-view.visible {
+  display: flex;
+}
+#image-view img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+#exit-image-view {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  padding: 8px 16px;
+  background: rgba(20, 20, 26, 0.85);
+  color: #e6e6ea;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+}
+#exit-image-view:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.file-thumb {
+  cursor: pointer;
+}
