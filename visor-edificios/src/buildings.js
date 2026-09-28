@@ -50,7 +50,27 @@ export const BUILT_IN_BUILDINGS = [
     id: 'demo',
     name: 'Edificio de ejemplo',
     isDemo: true,
-    modelUrl: `${import.meta.env.BASE_URL}models/low_poly_building.glb`
+    modelUrl: `${import.meta.env.BASE_URL}models/low_poly_building.glb`,
+    demoZones: [
+      {
+        position: { x: -0.35041746673751906, y: 1.2014778964784707, z: 2.1439832535485737 },
+        scale: { x: -4.226000759425636, y: 2.50147226349803, z: 2.243340529485509 },
+        comment: 'Ejemplo de reforma: renovación de la zona común — nuevo suelo, iluminación y mobiliario de recepción. Para más información, consultar el CV de Beatriz Martín adjunto en este comentario.',
+        files: [
+          { url: `${import.meta.env.BASE_URL}panoramas/zona_comun.jpg`, name: 'zona_comun.jpg', kind: 'image360' },
+          { url: `${import.meta.env.BASE_URL}documents/CV_Beatriz_Martin.pdf`, name: 'CV_Beatriz_Martin.pdf', kind: 'file' }
+        ]
+      },
+      {
+        position: { x: 1.5703562227217946, y: 4.880616403081851, z: -2.223072303564498 },
+        scale: { x: 1.747846054163014, y: 2.3019363970677493, z: 1.747846054163014 },
+        comment: 'Ejemplo de reforma: habitación tipo tras la renovación — baño actualizado, tarima nueva e iluminación cálida. Para más información, consultar el CV de Beatriz Martín adjunto en este comentario.',
+        files: [
+          { url: `${import.meta.env.BASE_URL}panoramas/habitacion.jpg`, name: 'habitacion.jpg', kind: 'image360' },
+          { url: `${import.meta.env.BASE_URL}documents/CV_Beatriz_Martin.pdf`, name: 'CV_Beatriz_Martin.pdf', kind: 'file' }
+        ]
+      }
+    ]
   },
   {
     id: 'demo_2',

@@ -22,3 +22,15 @@ export function loadZones(buildingId){
     return []
   }
 }
+
+function seededKey(buildingId){
+  return `visor-edificios:seeded:${buildingId}`
+}
+
+export function hasSeeded(buildingId){
+  return localStorage.getItem(seededKey(buildingId)) === 'true'
+}
+
+export function markSeeded(buildingId){
+  localStorage.setItem(seededKey(buildingId), 'true')
+}

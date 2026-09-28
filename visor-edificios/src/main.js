@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { TransformControls } from 'three/addons/controls/TransformControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import {saveZones, loadZones} from './storage.js'
+import { saveZones, loadZones, hasSeeded, markSeeded } from './storage.js'
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js' //render2D para texto
 import { saveFileRecord, loadFileRecords, deleteFileRecord, deleteZoneFiles } from './fileStorage.js'
 import { BUILT_IN_BUILDINGS } from './buildings.js'
@@ -246,6 +246,15 @@ function initViewer(buildingConfig){
         item.appendChild(viewButton)
       }
 
+      if (!file.type.startsWith('image/')) {
+        const downloadLink = document.createElement('a')
+        downloadLink.href = file.url
+        downloadLink.download = file.name
+        downloadLink.textContent = 'Descargar'
+        downloadLink.className = 'file-action'
+        item.appendChild(downloadLink)
+      }
+
       const removeButton = document.createElement('button')
       removeButton.textContent = '×'
       removeButton.className = 'file-remove'
@@ -351,6 +360,8 @@ function initViewer(buildingConfig){
     addZone(saved.position, saved.scale, saved.comment, saved.id)
   }
 
+  seedDemoData()
+
   function selectZone(zone){
     if (selectedZone) selectedZone.material.opacity = 0.15
     selectedZone = zone
@@ -379,6 +390,43 @@ function initViewer(buildingConfig){
     zone.material.dispose()
     saveZones(buildingId, zones)
   }
+
+  async function seedDemoData(){
+  if (!buildingConfig.demoZones) return
+  if (hasSeeded(buildingId)) return
+
+  for (const zoneSpec of buildingConfig.demoZones) {
+    const zone = addZone(zoneSpec.position, zoneSpec.scale, zoneSpec.comment)
+
+    for (const fileSpec of zoneSpec.files) {
+      const response = await fetch(fileSpec.url)
+      const blob = await response.blob()
+      const id = crypto.randomUUID()
+
+      zone.userData.files.push({
+        id,
+        name: fileSpec.name,
+        size: blob.size,
+        type: blob.type,
+        url: URL.createObjectURL(blob),
+        kind: fileSpec.kind
+      })
+
+          await saveFileRecord({
+            id,
+            zoneId: zone.userData.id,
+            name: fileSpec.name,
+            size: blob.size,
+            type: blob.type,
+            kind: fileSpec.kind,
+            blob
+          })
+        }
+      }
+
+      saveZones(buildingId, zones)
+      markSeeded(buildingId)
+    }
 
   function setCreatingZone(value){
     creatingZone = value
