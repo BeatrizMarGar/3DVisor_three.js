@@ -5,6 +5,7 @@ export function initGallery(onSelectBuilding){
   const buildingList = document.getElementById('building-list')
   const uploadInput = document.getElementById('building-upload-input')
     const featuredContainer = document.getElementById('featured-building')
+    document.getElementById('gallery-cv-link').href = `${import.meta.env.BASE_URL}documents/CV_Beatriz_Martin.pdf`
 async function renderBuildingList(){
   const buildings = await listAllBuildings()
 
