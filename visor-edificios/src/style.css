@@ -458,3 +458,36 @@ canvas.panorama-window {
   color: #4a4a55;
   background: linear-gradient(145deg, #23232d, #1a1a20);
 }
+
+@media (max-width: 640px) {
+  #legend {
+    display: none;
+  }
+
+  #comment-panel {
+    width: calc(100vw - 32px);
+  }
+
+  .building-card.featured {
+    padding: 1.25rem;
+  }
+
+  .gallery-content h1 {
+    font-size: 1.5rem;
+  }
+
+  #top-bar button {
+    padding: 0.6rem 0.9rem;
+    font-size: 0.85rem;
+  }
+
+  .file-remove {
+    width: 26px;
+    height: 26px;
+    font-size: 16px;
+  }
+
+  .file-buttons {
+    flex-direction: column;
+  }
+}
