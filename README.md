@@ -64,26 +64,27 @@ La aplicación estará disponible en `http://localhost:5173` (o el puerto que in
 
 ## Estructura del proyecto
 
-Three/ # raíz del repositorio
+```
+Three/                         # raíz del repositorio
 ├── .github/
-│ └── workflows/
-│ └── deploy.yml # despliegue automático a GitHub Pages
-└── visor-edificios/ # proyecto Vite (raíz de la aplicación)
-├── public/
-│ ├── models/ # Modelos 3D (.glb) precargados
-│ ├── panoramas/ # Imágenes 360º de ejemplo
-│ └── documents/ # Documentos de ejemplo
-├── src/
-│ ├── main.js # Lógica del visor 3D (escena, cámara, zonas, panorama...)
-│ ├── gallery.js # Pantalla de inicio y galería de edificios
-│ ├── buildings.js # Definición de edificios y gestión de modelos subidos (IndexedDB)
-│ ├── storage.js # Persistencia de zonas y comentarios (localStorage)
-│ ├── fileStorage.js # Persistencia de archivos adjuntos (IndexedDB)
-│ └── style.css # Estilos de la aplicación
-├── index.html
-├── vite.config.js
-└── package.json
-
+│   └── workflows/
+│       └── deploy.yml         # despliegue automático a GitHub Pages
+└── visor-edificios/           # proyecto Vite (raíz de la aplicación)
+    ├── public/
+    │   ├── models/             # Modelos 3D (.glb) precargados
+    │   ├── panoramas/          # Imágenes 360º de ejemplo
+    │   └── documents/          # Documentos de ejemplo
+    ├── src/
+    │   ├── main.js             # Lógica del visor 3D (escena, cámara, zonas, panorama...)
+    │   ├── gallery.js          # Pantalla de inicio y galería de edificios
+    │   ├── buildings.js        # Definición de edificios y gestión de modelos subidos (IndexedDB)
+    │   ├── storage.js          # Persistencia de zonas y comentarios (localStorage)
+    │   ├── fileStorage.js      # Persistencia de archivos adjuntos (IndexedDB)
+    │   └── style.css           # Estilos de la aplicación
+    ├── index.html
+    ├── vite.config.js
+    └── package.json
+```
 
 ## Despliegue
 
