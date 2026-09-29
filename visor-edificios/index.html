@@ -46,20 +46,35 @@
       <img id="image-view-img" alt="">
       <button id="exit-image-view">Salir</button>
     </div>
-    <button id="back-to-gallery">← Inicio</button>
+    <div id="top-bar">
+      <button id="back-to-gallery">← Inicio</button>
+      <button id="info-button">ⓘ Sobre mí</button>
+    </div>
+
+    <div id="info-panel">
+      <h2>Beatriz Martín</h2>
+      <p>¡Hola, soy Beatriz Martín! Me defino como desarrolladora Full Stack especialista en proyectos creativos e interactivos. Trabajo transformando ideas en experiencias web reales, combinando tecnologías como JavaScript, Node.js y React con entornos 3D e inmersivos en Three.js y WebGL.</p>
+      <p>Este visor es un ejemplo de ello: pensado para sectores como la construcción o la reforma de espacios, permite documentar zonas concretas de un edificio con comentarios, archivos adjuntos y vistas panorámicas 360º.</p>
+      <div class="info-links">
+        <a href="https://www.linkedin.com/in/beatrizmartingarrido" target="_blank" rel="noopener" class="file-button">LinkedIn</a>
+        <a id="cv-download-link" download class="file-button">Descargar CV</a>
+        <a href="mailto:martin_beatriz94@hotmail.com" class="file-button">¿Hablamos?</a>
+      </div>
+    </div>
     <div id="gallery-screen">
       <div class="gallery-content">
+        
         <h1>Visor 3D de edificios</h1>
-        <p>Explora el edificio de ejemplo o elige otro modelo disponible.</p>
-
+        <p>¡Hola! Soy Beatriz Martín, desarrolladora Full Stack, y te doy la bienvenida a este visor 3D de edificios, una aplicación construida con Three.js y WebGL para explorar modelos arquitectónicos en el navegador.</p>
+        <p>Permite señalar zonas del edificio con comentarios, documentación adjunta e imágenes 360º, todo con persistencia local mediante IndexedDB — sin necesidad de servidor ni base de datos externa.</p>
         <div id="featured-building"></div>
 
         <h2 class="gallery-subheading">Otros edificios</h2>
         <div id="building-list"></div>
 
         <label class="file-button">
-          Subir mi modelo (.glb / .gltf)
-          <input type="file" id="building-upload-input" accept=".glb,.gltf" hidden>
+          Subir mi modelo (.glb)
+          <input type="file" id="building-upload-input" accept=".glb" hidden>
         </label>
       </div>
     </div>

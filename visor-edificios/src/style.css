@@ -265,11 +265,11 @@ canvas.panorama-window {
   inset: 0;
   z-index: 20;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   background: radial-gradient(circle at 50% 0%, #2a2a38, #16161b 70%);
   color: #eee;
-  padding: 2rem 1rem;
+  padding: 3rem 1rem;
   overflow-y: auto;
 }
 
@@ -373,11 +373,16 @@ canvas.panorama-window {
   font-weight: 600;
 }
 
-#back-to-gallery {
+#top-bar {
   position: fixed;
   top: 1rem;
-  right: 1rem;
+  left: 1rem;
   z-index: 5;
+  display: flex;
+  gap: 0.5rem;
+}
+
+#top-bar button {
   background: rgba(30, 30, 36, 0.85);
   color: #eee;
   border: 1px solid #33333d;
@@ -387,8 +392,52 @@ canvas.panorama-window {
   font-size: 0.9rem;
 }
 
-#back-to-gallery:hover {
+#top-bar button:hover {
   border-color: #33aaff;
+}
+
+#info-panel {
+  display: none;
+  position: fixed;
+  top: 4.5rem;
+  left: 1rem;
+  z-index: 6;
+  width: 300px;
+  max-width: calc(100vw - 2rem);
+  padding: 1.25rem;
+  background: rgba(20, 20, 26, 0.95);
+  border: 1px solid #33333d;
+  border-radius: 10px;
+  color: #e6e6ea;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+#info-panel.visible {
+  display: block;
+}
+
+#info-panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+#info-panel p {
+  color: #b3b3bd;
+  margin: 0 0 0.75rem;
+}
+
+.info-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.info-links a {
+  text-decoration: none;
+  color: inherit;
 }
 
 .building-thumbnail {

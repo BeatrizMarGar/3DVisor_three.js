@@ -100,9 +100,18 @@ function initViewer(buildingConfig){
 
   const exitPanoramaButton = document.getElementById('exit-panorama')
 
-  document.getElementById('back-to-gallery').addEventListener('click', () => {
-    location.reload()
-  })
+document.getElementById('back-to-gallery').addEventListener('click', () => {
+  location.reload()
+})
+
+const infoButton = document.getElementById('info-button')
+const infoPanel = document.getElementById('info-panel')
+
+infoButton.addEventListener('click', () => {
+  infoPanel.classList.toggle('visible')
+})
+
+document.getElementById('cv-download-link').href = `${import.meta.env.BASE_URL}documents/CV_Beatriz_Martin.pdf`
 
   function openPanorama(file){
     new THREE.TextureLoader().load(file.url, (texture) => {

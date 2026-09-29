@@ -74,17 +74,23 @@ function selectBuilding(building){
     const file = uploadInput.files[0]
     if (!file) return
 
-    const name = file.name.replace(/\.(glb|gltf)$/i, '')
+    if (!file.name.toLowerCase().endsWith('.glb')) {
+        alert('De momento solo se admiten modelos en formato .glb')
+        uploadInput.value = ''
+        return
+    }
+
+    const name = file.name.replace(/\.glb$/i, '')
 
     await saveBuilding({
-      id: crypto.randomUUID(),
-      name,
-      blob: file
+        id: crypto.randomUUID(),
+        name,
+        blob: file
     })
 
     uploadInput.value = ''
     renderBuildingList()
-  })
+    })
 
   renderBuildingList()
 }
