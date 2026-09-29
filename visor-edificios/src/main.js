@@ -6,7 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { saveZones, loadZones, hasSeeded, markSeeded } from './storage.js'
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js' //render2D para texto
 import { saveFileRecord, loadFileRecords, deleteFileRecord, deleteZoneFiles } from './fileStorage.js'
-import { BUILT_IN_BUILDINGS } from './buildings.js'
+import { initGallery } from './gallery.js'
 
 function initViewer(buildingConfig){
   const buildingId = buildingConfig.id
@@ -99,6 +99,10 @@ function initViewer(buildingConfig){
   scene.add(sun)
 
   const exitPanoramaButton = document.getElementById('exit-panorama')
+
+  document.getElementById('back-to-gallery').addEventListener('click', () => {
+    location.reload()
+  })
 
   function openPanorama(file){
     new THREE.TextureLoader().load(file.url, (texture) => {
@@ -527,4 +531,4 @@ function initViewer(buildingConfig){
   })
 }
 
-initViewer(BUILT_IN_BUILDINGS[0])
+initGallery(initViewer)

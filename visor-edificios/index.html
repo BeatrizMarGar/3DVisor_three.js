@@ -46,6 +46,23 @@
       <img id="image-view-img" alt="">
       <button id="exit-image-view">Salir</button>
     </div>
+    <button id="back-to-gallery">← Inicio</button>
+    <div id="gallery-screen">
+      <div class="gallery-content">
+        <h1>Visor 3D de edificios</h1>
+        <p>Explora el edificio de ejemplo o elige otro modelo disponible.</p>
+
+        <div id="featured-building"></div>
+
+        <h2 class="gallery-subheading">Otros edificios</h2>
+        <div id="building-list"></div>
+
+        <label class="file-button">
+          Subir mi modelo (.glb / .gltf)
+          <input type="file" id="building-upload-input" accept=".glb,.gltf" hidden>
+        </label>
+      </div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

@@ -46,11 +46,12 @@ export async function deleteBuilding(id){
 }
 
 export const BUILT_IN_BUILDINGS = [
-  {
+    {
     id: 'demo',
     name: 'Edificio de ejemplo',
     isDemo: true,
     modelUrl: `${import.meta.env.BASE_URL}models/low_poly_building.glb`,
+    thumbnail: `${import.meta.env.BASE_URL}thumbnails/demo.webp`,
     demoZones: [
       {
         position: { x: -0.35041746673751906, y: 1.2014778964784707, z: 2.1439832535485737 },
@@ -76,7 +77,8 @@ export const BUILT_IN_BUILDINGS = [
     id: 'demo_2',
     name: 'Edificio de Chicago',
     isDemo: true,
-    modelUrl: `${import.meta.env.BASE_URL}models/chicago_buildings.glb`
+    modelUrl: `${import.meta.env.BASE_URL}models/chicago_buildings.glb`,
+    thumbnail: `${import.meta.env.BASE_URL}thumbnails/chicago.webp`
   }
 ]
 
